@@ -1,0 +1,26 @@
+# https://www.koyeb.com
+name: yima-panel
+services:
+  - name: web
+    type: web
+    ports:
+      - port: 8000
+        protocols: ["http"]
+    routes:
+      - path: /
+    instance_types:
+      - type: free
+    regions: ["sin"]
+    scalings:
+      - min: 0
+        max: 1
+    env:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    git:
+      repository: https://github.com/agony9852111-lang/yima-panel
+      branch: master
+      build:
+        type: docker
+        dockerfile: Dockerfile
+    # Koyeb injects PORT; Dockerfile already uses ${PORT}
