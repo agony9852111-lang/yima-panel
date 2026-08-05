@@ -1,9 +1,11 @@
 services:
   - type: web
     name: yima-panel
-    runtime: docker
+    runtime: python
     plan: free
     region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     envVars:
       - key: PYTHONUNBUFFERED
