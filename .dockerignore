@@ -1,0 +1,10 @@
+.git
+__pycache__
+*.pyc
+.venv
+venv
+.env
+*.md
+.DS_Store
+work
+exports

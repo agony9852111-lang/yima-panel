@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>易码操作台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">YM</span>
+      <div>
+        <strong>易码操作台</strong>
+        <small>先配置 Token，再随机取号收短信</small>
+      </div>
+    </div>
+    <nav class="nav" role="tablist" aria-label="主模块">
+      <button type="button" class="nav-item active" data-page="random">01 随机板块</button>
+      <button type="button" class="nav-item" data-page="account">02 个人中心</button>
+    </nav>
+    <div class="top-meta">
+      <span class="pill" id="healthDot">检测中</span>
+      <span class="pill soft" id="tokenState">Token 未配置</span>
+      <span class="pill soft" id="flowState">就绪</span>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="page active" id="page-random">
+      <div class="page-card tone-violet" id="randomCard">
+        <div class="token-gate" id="tokenGate">
+          <strong>需要先配置 Token</strong>
+          <p>随机任务必须使用个人中心的 API Token。请先完成配置。</p>
+          <button type="button" class="btn primary" id="btnGoAccount">去个人中心配置 →</button>
+        </div>
+
+        <div class="page-title">
+          <span class="badge violet">01</span>
+          <div>
+            <h1>随机板块</h1>
+            <p>并发只限制同时进行几条任务，总取号/查短信次数不限，一直跑到点停止</p>
+          </div>
+        </div>
+
+        <label class="full">关键词列表（每行一个，每路任务随机抽取）
+          <textarea id="randKeywords" rows="7" placeholder="毛竹&#10;青竹论坛&#10;Verification"></textarea>
+        </label>
+
+        <div class="form-grid">
+          <label>最大并发（同时进行中的任务数，不是总次数）
+            <input id="randCount" type="number" min="1" max="100" value="3" />
+          </label>
+          <label>取号间隔（秒）
+            <input id="randGetInterval" type="number" min="0" max="60" step="0.5" value="1" />
+          </label>
+          <label>查询间隔（秒）
+            <input id="randMsgInterval" type="number" min="0" max="60" step="0.5" value="1" title="取到号码后，等待该秒数再调用一次查短信接口（调用成功即算完成，不要求真正收到验证码）" />
+          </label>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn primary violet" id="btnRandomJob" disabled>启动持续任务</button>
+          <button type="button" class="btn ghost" id="btnStopJob" disabled>停止</button>
+          <button type="button" class="btn ghost" id="btnClearResults">清空结果</button>
+        </div>
+
+        <pre class="log" id="randLog">并发 = 资源上限（同时跑几条）。每条任务：无限轮询取号 → 查一次短信 → 释放并发位并立刻开新任务。总次数不限，直到停止。</pre>
+
+        <div class="progress-panel" id="progressPanel">
+          <div class="progress-head">
+            <strong>运行进度</strong>
+            <span id="progressLabel">未启动</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <div class="progress-meta">
+            <span>轮次 <b id="statCycles">0</b></span>
+            <span>取号 <b id="statPhone">0</b></span>
+            <span>短信 <b id="statSms">0</b></span>
+            <span>成功率 <b id="statRate">0%</b></span>
+          </div>
+        </div>
+
+        <div class="results-panel">
+          <div class="results-head">
+            <span>运行结果（可滚动）</span>
+            <span class="results-count" id="resultsCount">0 条</span>
+          </div>
+          <div class="results" id="randResults"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="page" id="page-account">
+      <div class="page-card">
+        <div class="page-title">
+          <span class="badge">02</span>
+          <div>
+            <h1>个人中心</h1>
+            <p>配置根域名与 API Token（使用功能前必填）</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <label>根域名
+            <input id="rootDomain" value="ejiema.com" placeholder="ejiema.com / uomsg.com" />
+          </label>
+          <label>API Token
+            <div class="token-row">
+              <input id="token" type="password" placeholder="在官网个人中心创建后粘贴" autocomplete="off" />
+              <button type="button" class="btn ghost" id="toggleToken">显示</button>
+            </div>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn primary" id="btnSaveToken">保存配置</button>
+          <button type="button" class="btn ghost" id="btnBalance">查询余额</button>
+          <button type="button" class="btn ghost" id="btnGoRandom">返回随机板块 →</button>
+        </div>
+        <div class="stat" id="balanceBox">余额未查询</div>
+        <div class="api-base">开放 API：<code id="apiBasePreview">https://api.ejiema.com/zc/data.php</code></div>
+        <p class="tip">Token 在官网「个人中心 → 创建 API Token」生成。保存后记在本机浏览器。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">部署：uvicorn app.main:app --host 0.0.0.0 --port 8787 · 仅使用自有 Token</footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>
